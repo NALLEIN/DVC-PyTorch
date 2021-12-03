@@ -12,6 +12,7 @@ modelspath = '../flow_pretrain_np/'
 
 # from flow_warp import flow_warp
 
+
 def gather_nd(img, idx):
     """
     same as tf.gather_nd in pytorch
@@ -20,6 +21,7 @@ def gather_nd(img, idx):
     idx1, idx2, idx3 = idx.chunk(3, dim=3)
     output = img[idx1, idx2, idx3].squeeze(3)
     return output
+
 
 def get_pixel_value(img, x, y):
     """
@@ -51,22 +53,36 @@ def get_pixel_value(img, x, y):
 
 Backward_tensorGrid = [{} for i in range(8)]
 
+
 def torch_warp(tensorInput, tensorFlow):
     device_id = tensorInput.device.index
     if str(tensorFlow.size()) not in Backward_tensorGrid[device_id]:
-            tensorHorizontal = torch.linspace(-1.0, 1.0, tensorFlow.size(3)).view(1, 1, 1, tensorFlow.size(3)).expand(tensorFlow.size(0), -1, tensorFlow.size(2), -1)
-            tensorVertical = torch.linspace(-1.0, 1.0, tensorFlow.size(2)).view(1, 1, tensorFlow.size(2), 1).expand(tensorFlow.size(0), -1, -1, tensorFlow.size(3))
-            Backward_tensorGrid[device_id][str(tensorFlow.size())] = torch.cat([ tensorHorizontal, tensorVertical ], 1).cuda().to(device_id)
-            # B, C, H, W = tensorInput.size()
-            # xx = torch.arange(0, W).view(1,-1).repeat(H,1)
-            # yy = torch.arange(0, H).view(-1,1).repeat(1,W)
-            # xx = xx.view(1,1,H,W).repeat(B,1,1,1)
-            # yy = yy.view(1,1,H,W).repeat(B,1,1,1)
-            # Backward_tensorGrid[device_id][str(tensorFlow.size())] = Variable(torch.cat([xx, yy], 1).float().cuda()).to(device_id)
+        tensorHorizontal = torch.linspace(-1.0, 1.0, tensorFlow.size(3)).view(1, 1, 1, tensorFlow.size(3)).expand(
+            tensorFlow.size(0), -1, tensorFlow.size(2), -1)
+        tensorVertical = torch.linspace(-1.0, 1.0, tensorFlow.size(2)).view(1, 1, tensorFlow.size(2),
+                                                                            1).expand(tensorFlow.size(0), -1, -1,
+                                                                                      tensorFlow.size(3))
+        Backward_tensorGrid[device_id][str(tensorFlow.size())] = torch.cat([tensorHorizontal, tensorVertical],
+                                                                           1).cuda().to(device_id)
+        # B, C, H, W = tensorInput.size()
+        # xx = torch.arange(0, W).view(1,-1).repeat(H,1)
+        # yy = torch.arange(0, H).view(-1,1).repeat(1,W)
+        # xx = xx.view(1,1,H,W).repeat(B,1,1,1)
+        # yy = yy.view(1,1,H,W).repeat(B,1,1,1)
+        # Backward_tensorGrid[device_id][str(tensorFlow.size())] = Variable(torch.cat([xx, yy], 1).float().cuda()).to(device_id)
 
-    tensorFlow = torch.cat([tensorFlow[:, 0:1, :, :] / ((tensorInput.size(3) - 1.0) / 2.0), tensorFlow[:, 1:2, :, :] / ((tensorInput.size(2) - 1.0) / 2.0) ], 1)
+    tensorFlow = torch.cat([
+        tensorFlow[:, 0:1, :, :] / ((tensorInput.size(3) - 1.0) / 2.0), tensorFlow[:, 1:2, :, :] /
+        ((tensorInput.size(2) - 1.0) / 2.0)
+    ], 1)
 
-    return torch.nn.functional.grid_sample(input=tensorInput, grid=(Backward_tensorGrid[device_id][str(tensorFlow.size())] + tensorFlow).permute(0, 2, 3, 1), mode='bilinear', padding_mode='border')
+    return torch.nn.functional.grid_sample(input=tensorInput,
+                                           grid=(Backward_tensorGrid[device_id][str(tensorFlow.size())] + tensorFlow).permute(
+                                               0, 2, 3, 1),
+                                           mode='bilinear',
+                                           padding_mode='border')
+
+
 # # end
 # Backward_tensorGrid = [{} for i in range(8)]
 # vgrids = {}
@@ -79,7 +95,7 @@ def torch_warp(tensorInput, tensorFlow):
 #     torch.backends.cudnn.enabled = True
 #     B, C, H, W = x.size()
 #     if str(x.size()) not in vgrids:
-#         # mesh grid 
+#         # mesh grid
 #         xx = torch.arange(0, W).view(1,-1).repeat(H,1)
 #         yy = torch.arange(0, H).view(-1,1).repeat(1,W)
 #         xx = xx.view(1,1,H,W).repeat(B,1,1,1)
@@ -94,7 +110,6 @@ def torch_warp(tensorInput, tensorFlow):
 #     vgrid[:,0,:,:] = 2.0*vgrid[:,0,:,:].clone() / max(W-1,1)-1.0
 #     vgrid[:,1,:,:] = 2.0*vgrid[:,1,:,:].clone() / max(H-1,1)-1.0
 #     vgrid = vgrid.permute(0,2,3,1)
-    
 
 #     output = torch.nn.functional.grid_sample(x, grid=vgrid, mode='bilinear', padding_mode='border')
 #     mask = torch.autograd.Variable(torch.ones(x.size())).cuda()
@@ -103,11 +118,12 @@ def torch_warp(tensorInput, tensorFlow):
 #     # if W==128:
 #         # np.save('mask.npy', mask.cpu().data.numpy())
 #         # np.save('warp.npy', output.cpu().data.numpy())
-    
+
 #     mask[mask<0.9999] = 0
 #     mask[mask>0] = 1
 
 #     return output*mask
+
 
 def log10(x):
     numerator = torch.log(x)
@@ -141,6 +157,7 @@ def loadweightformnp(layername):
         return torch.from_numpy(weightnp), torch.from_numpy(biasnp)
         # return init_weight, init_bias
 
+
 class MEBasic(nn.Module):
     '''
     Get flow
@@ -171,7 +188,6 @@ class MEBasic(nn.Module):
         return x
 
 
-
 def bilinearupsacling(inputfeature):
     inputheight = inputfeature.size()[2]
     inputwidth = inputfeature.size()[3]
@@ -179,6 +195,8 @@ def bilinearupsacling(inputfeature):
     outfeature = F.interpolate(inputfeature, (inputheight * 2, inputwidth * 2), mode='bilinear')
     # print(outfeature.size())
     return outfeature
+
+
 def bilinearupsacling2(inputfeature):
     inputheight = inputfeature.size()[2]
     inputwidth = inputfeature.size()[3]
@@ -191,7 +209,6 @@ def bilinearupsacling2(inputfeature):
 #     inputwidth = inputfeature.get_shape().as_list()[2]
 #     outfeature = tf.image.resize_images(inputfeature, [inputheight * 2, inputwidth * 2], align_corners=True)
 #     return outfeature
-
 
 # def conv2Block(layername,
 #                inputfeature,
@@ -227,15 +244,16 @@ def bilinearupsacling2(inputfeature):
 #     else:
 #         return PreActivation
 
+
 class ResBlock(nn.Module):
     def __init__(self, inputchannel, outputchannel, kernel_size, stride=1):
         super(ResBlock, self).__init__()
         self.relu1 = nn.ReLU()
-        self.conv1 = nn.Conv2d(inputchannel, outputchannel, kernel_size, stride, padding=kernel_size//2)
+        self.conv1 = nn.Conv2d(inputchannel, outputchannel, kernel_size, stride, padding=kernel_size // 2)
         torch.nn.init.xavier_uniform_(self.conv1.weight.data)
         torch.nn.init.constant_(self.conv1.bias.data, 0.0)
         self.relu2 = nn.ReLU()
-        self.conv2 = nn.Conv2d(outputchannel, outputchannel, kernel_size, stride, padding=kernel_size//2)
+        self.conv2 = nn.Conv2d(outputchannel, outputchannel, kernel_size, stride, padding=kernel_size // 2)
         torch.nn.init.xavier_uniform_(self.conv2.weight.data)
         torch.nn.init.constant_(self.conv2.bias.data, 0.0)
         # self.resblock = nn.Sequential(
@@ -261,23 +279,24 @@ class ResBlock(nn.Module):
         else:
             return self.adapt_conv(x) + seclayer
 
+
 class Warp_net(nn.Module):
     def __init__(self):
         super(Warp_net, self).__init__()
         channelnum = 64
 
-        self.feature_ext = nn.Conv2d(6, channelnum, 3, padding=1)# feature_ext
+        self.feature_ext = nn.Conv2d(6, channelnum, 3, padding=1)  # feature_ext
         self.f_relu = nn.ReLU()
         torch.nn.init.xavier_uniform_(self.feature_ext.weight.data)
         torch.nn.init.constant_(self.feature_ext.bias.data, 0.0)
-        self.conv0 = ResBlock(channelnum, channelnum, 3)#c0
-        self.conv0_p = nn.AvgPool2d(2, 2)# c0p
-        self.conv1 = ResBlock(channelnum, channelnum, 3)#c1
-        self.conv1_p = nn.AvgPool2d(2, 2)# c1p
-        self.conv2 = ResBlock(channelnum, channelnum, 3)# c2
-        self.conv3 = ResBlock(channelnum, channelnum, 3)# c3
-        self.conv4 = ResBlock(channelnum, channelnum, 3)# c4
-        self.conv5 = ResBlock(channelnum, channelnum, 3)# c5
+        self.conv0 = ResBlock(channelnum, channelnum, 3)  #c0
+        self.conv0_p = nn.AvgPool2d(2, 2)  # c0p
+        self.conv1 = ResBlock(channelnum, channelnum, 3)  #c1
+        self.conv1_p = nn.AvgPool2d(2, 2)  # c1p
+        self.conv2 = ResBlock(channelnum, channelnum, 3)  # c2
+        self.conv3 = ResBlock(channelnum, channelnum, 3)  # c3
+        self.conv4 = ResBlock(channelnum, channelnum, 3)  # c4
+        self.conv5 = ResBlock(channelnum, channelnum, 3)  # c5
         self.conv6 = nn.Conv2d(channelnum, 3, 3, padding=1)
         torch.nn.init.xavier_uniform_(self.conv6.weight.data)
         torch.nn.init.constant_(self.conv6.bias.data, 0.0)
@@ -290,9 +309,11 @@ class Warp_net(nn.Module):
         c1_p = self.conv1_p(c1)
         c2 = self.conv2(c1_p)
         c3 = self.conv3(c2)
-        c3_u = c1 + bilinearupsacling2(c3)#torch.nn.functional.interpolate(input=c3, scale_factor=2, mode='bilinear', align_corners=True)
+        c3_u = c1 + bilinearupsacling2(
+            c3)  #torch.nn.functional.interpolate(input=c3, scale_factor=2, mode='bilinear', align_corners=True)
         c4 = self.conv4(c3_u)
-        c4_u = c0 + bilinearupsacling2(c4)# torch.nn.functional.interpolate(input=c4, scale_factor=2, mode='bilinear', align_corners=True)
+        c4_u = c0 + bilinearupsacling2(
+            c4)  # torch.nn.functional.interpolate(input=c4, scale_factor=2, mode='bilinear', align_corners=True)
         c5 = self.conv5(c4_u)
         res = self.conv6(c5)
         return res
@@ -311,6 +332,8 @@ class Warp_net(nn.Module):
 #     return rgb
 
 flowfiledsSamples = [{} for i in range(8)]
+
+
 class ME_Spynet(nn.Module):
     '''
     Get flow
@@ -318,13 +341,13 @@ class ME_Spynet(nn.Module):
     def __init__(self, layername='motion_estimation'):
         super(ME_Spynet, self).__init__()
         self.L = 4
-        self.moduleBasic = torch.nn.ModuleList([ MEBasic(layername + 'modelL' + str(intLevel + 1)) for intLevel in range(4) ])
+        self.moduleBasic = torch.nn.ModuleList([MEBasic(layername + 'modelL' + str(intLevel + 1)) for intLevel in range(4)])
         # self.meBasic1 = MEBasic(layername + 'modelL1')
         # self.meBasic2 = MEBasic(layername + 'modelL2')
         # self.meBasic3 = MEBasic(layername + 'modelL3')
         # self.meBasic4 = MEBasic(layername + 'modelL4')
         # self.flow_warp = Resample2d()
-        
+
         # self.meBasic = [self.meBasic1, self.meBasic2, self.meBasic3, self.meBasic4]
 
     # def Preprocessing(self, im):
@@ -344,8 +367,8 @@ class ME_Spynet(nn.Module):
         im1list = [im1_pre]
         im2list = [im2_pre]
         for intLevel in range(self.L - 1):
-            im1list.append(F.avg_pool2d(im1list[intLevel], kernel_size=2, stride=2))# , count_include_pad=False))
-            im2list.append(F.avg_pool2d(im2list[intLevel], kernel_size=2, stride=2))#, count_include_pad=False))
+            im1list.append(F.avg_pool2d(im1list[intLevel], kernel_size=2, stride=2))  # , count_include_pad=False))
+            im2list.append(F.avg_pool2d(im2list[intLevel], kernel_size=2, stride=2))  #, count_include_pad=False))
 
         shape_fine = im2list[self.L - 1].size()
         zeroshape = [batchsize, 2, shape_fine[2] // 2, shape_fine[3] // 2]
@@ -353,7 +376,10 @@ class ME_Spynet(nn.Module):
         flowfileds = torch.zeros(zeroshape, dtype=torch.float32, device=device_id)
         for intLevel in range(self.L):
             flowfiledsUpsample = bilinearupsacling(flowfileds) * 2.0
-            flowfileds = flowfiledsUpsample + self.moduleBasic[intLevel](torch.cat([im1list[self.L - 1 - intLevel], flow_warp(im2list[self.L - 1 - intLevel], flowfiledsUpsample), flowfiledsUpsample], 1))# residualflow
+            flowfileds = flowfiledsUpsample + self.moduleBasic[intLevel](torch.cat([
+                im1list[self.L - 1 - intLevel],
+                flow_warp(im2list[self.L - 1 - intLevel], flowfiledsUpsample), flowfiledsUpsample
+            ], 1))  # residualflow
 
         return flowfileds
 
@@ -407,7 +433,7 @@ def build_model():
     im2 = imageio.imread('ref.png')
     im2 = im2 / 255.0
     im2 = np.expand_dims(im2, axis=0)
-    
+
     # means = np.array([0.485, 0.456, 0.406])
     # stds = np.array([0.229, 0.224, 0.225])
     # input_image = (input_image - means) / stds
@@ -435,11 +461,10 @@ def build_model():
     # print(error)
 
     # print(psnr)
-    imageio.imwrite('warp2.png', warp_frame[0, :, :, :].transpose(1,2,0))
+    imageio.imwrite('warp2.png', warp_frame[0, :, :, :].transpose(1, 2, 0))
     # warp_frame_rgb = flow_warp(im2, flow)
-    psnrwapr = CalcuPSNR(im1[0].cpu().numpy().transpose(1,2,0), warp_frame[0, :, :, :].transpose(1,2,0))
+    psnrwapr = CalcuPSNR(im1[0].cpu().numpy().transpose(1, 2, 0), warp_frame[0, :, :, :].transpose(1, 2, 0))
     print(psnrwapr)
-
 
 
 if __name__ == '__main__':

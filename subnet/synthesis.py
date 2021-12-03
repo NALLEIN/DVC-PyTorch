@@ -1,9 +1,10 @@
-#!/Library/Frameworks/Python.framework/Versions/3.5/bin/python3.5  
+#!/Library/Frameworks/Python.framework/Versions/3.5/bin/python3.5
 from .basics import *
 import pickle
 import os
 import codecs
 from .analysis import Analysis_net
+
 
 class Synthesis_net(nn.Module):
     '''
@@ -12,7 +13,8 @@ class Synthesis_net(nn.Module):
     def __init__(self):
         super(Synthesis_net, self).__init__()
         self.deconv1 = nn.ConvTranspose2d(out_channel_M, out_channel_N, 5, stride=2, padding=2, output_padding=1)
-        torch.nn.init.xavier_normal_(self.deconv1.weight.data, (math.sqrt(2 * 1 * (out_channel_M + out_channel_N) / (out_channel_M + out_channel_M))))
+        torch.nn.init.xavier_normal_(self.deconv1.weight.data,
+                                     (math.sqrt(2 * 1 * (out_channel_M + out_channel_N) / (out_channel_M + out_channel_M))))
         torch.nn.init.constant_(self.deconv1.bias.data, 0.01)
         self.igdn1 = GDN(out_channel_N, inverse=True)
         self.deconv2 = nn.ConvTranspose2d(out_channel_N, out_channel_N, 5, stride=2, padding=2, output_padding=1)
@@ -24,7 +26,8 @@ class Synthesis_net(nn.Module):
         torch.nn.init.constant_(self.deconv3.bias.data, 0.01)
         self.igdn3 = GDN(out_channel_N, inverse=True)
         self.deconv4 = nn.ConvTranspose2d(out_channel_N, 3, 5, stride=2, padding=2, output_padding=1)
-        torch.nn.init.xavier_normal_(self.deconv4.weight.data, (math.sqrt(2 * 1 * (out_channel_N + 3) / (out_channel_N + out_channel_N))))
+        torch.nn.init.xavier_normal_(self.deconv4.weight.data,
+                                     (math.sqrt(2 * 1 * (out_channel_N + 3) / (out_channel_N + out_channel_N))))
         torch.nn.init.constant_(self.deconv4.bias.data, 0.01)
         # self.resDecoder = nn.Sequential(
         #     nn.ConvTranspose2d(out_channel_M, out_channel_N, 5, stride=2, padding=2, output_padding=1),# how to initialize ???
@@ -44,10 +47,12 @@ class Synthesis_net(nn.Module):
         # print(torch.std(x.view(-1)).cpu().detach().numpy())
         return x
 
+
 # synthesis_one_pass = tf.make_template('synthesis_one_pass', synthesis_net)
 
+
 def build_model():
-    input_image = torch.zeros([7,3,256,256])
+    input_image = torch.zeros([7, 3, 256, 256])
     analysis_net = Analysis_net()
     synthesis_net = Synthesis_net()
     feature = analysis_net(input_image)
@@ -57,9 +62,9 @@ def build_model():
     print("feature : ", feature.size())
     print("recon_image : ", recon_image.size())
 
+
 # def main(_):
 #   build_model()
 
-
 if __name__ == '__main__':
-  build_model()
+    build_model()

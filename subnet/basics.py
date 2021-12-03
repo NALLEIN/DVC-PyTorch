@@ -44,6 +44,7 @@ def tensorimwrite(image, name='im'):
     image = image * 255
     imageio.imwrite(name + ".png", image.astype(np.uint8))
 
+
 def relu(x):
     return x
 
@@ -52,7 +53,6 @@ def relu(x):
 #     return tf.nn.sigmoid(x * 2)
 #     # return tf.minimum(tf.round(tf.nn.sigmoid(x)) + 0.00000001 , 1.0 - )
 #     # return tf.nn.sigmoid(x,name='relu')
-
 
 # from tensorflow.contrib.layers.python.layers import batch_norm as batch_norm
 
@@ -101,8 +101,10 @@ def CalcuPSNR(target, ref):
     rmse = math.sqrt(np.mean(diff**2.))
     return 20 * math.log10(1.0 / (rmse))
 
+
 def MSE2PSNR(MSE):
     return 10 * math.log10(1.0 / (MSE))
+
 
 def geti(lamb):
     if lamb == 2048:
@@ -114,7 +116,7 @@ def geti(lamb):
     elif lamb == 256:
         return 'H265L29'
     else:
-        print("cannot find lambda : %d"%(lamb))
+        print("cannot find lambda : %d" % (lamb))
         exit(0)
 
 
@@ -124,16 +126,18 @@ def conv2d_same_padding(input, weight, bias=None, stride=1, padding=0, dilation=
     filter_rows = weight.size(2)
     effective_filter_size_rows = (filter_rows - 1) * dilation[0] + 1
     out_rows = (input_rows + stride[0] - 1) // stride[0]
-    padding_rows = max(0, (out_rows - 1) * stride[0] +
-                        (filter_rows - 1) * dilation[0] + 1 - input_rows)
+    padding_rows = max(0, (out_rows - 1) * stride[0] + (filter_rows - 1) * dilation[0] + 1 - input_rows)
     rows_odd = (padding_rows % 2 != 0)
-    padding_cols = max(0, (out_rows - 1) * stride[0] +
-                        (filter_rows - 1) * dilation[0] + 1 - input_rows)
+    padding_cols = max(0, (out_rows - 1) * stride[0] + (filter_rows - 1) * dilation[0] + 1 - input_rows)
     cols_odd = (padding_rows % 2 != 0)
 
     if rows_odd or cols_odd:
         input = torch.pad(input, [0, int(cols_odd), 0, int(rows_odd)])
 
-    return F.conv2d(input, weight, bias, stride,
-                  padding=(padding_rows // 2, padding_cols // 2),
-                  dilation=dilation, groups=groups)
+    return F.conv2d(input,
+                    weight,
+                    bias,
+                    stride,
+                    padding=(padding_rows // 2, padding_cols // 2),
+                    dilation=dilation,
+                    groups=groups)

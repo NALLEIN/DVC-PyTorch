@@ -12,7 +12,7 @@ class LowerBound(Function):
         b = torch.ones_like(inputs) * bound
         ctx.save_for_backward(inputs, b)
         return torch.max(inputs, b)
-        
+
     @staticmethod
     def backward(ctx, grad_output):
         inputs, b = ctx.saved_tensors
@@ -27,13 +27,7 @@ class GDN(nn.Module):
     """Generalized divisive normalization layer.
     y[i] = x[i] / sqrt(beta[i] + sum_j(gamma[j, i] * x[j]))
     """
-
-    def __init__(self,
-                 ch,
-                 inverse=False,
-                 beta_min=1e-6,
-                 gamma_init=0.1,
-                 reparam_offset=2**-18):
+    def __init__(self, ch, inverse=False, beta_min=1e-6, gamma_init=0.1, reparam_offset=2**-18):
         super(GDN, self).__init__()
         self.inverse = inverse
         self.beta_min = beta_min
@@ -48,12 +42,12 @@ class GDN(nn.Module):
         self.gamma_bound = self.reparam_offset
 
         # Create beta param
-        beta = torch.sqrt(torch.ones(ch)+self.pedestal)
+        beta = torch.sqrt(torch.ones(ch) + self.pedestal)
         self.beta = nn.Parameter(beta)
 
         # Create gamma param
         eye = torch.eye(ch)
-        g = self.gamma_init*eye
+        g = self.gamma_init * eye
         g = g + self.pedestal
         gamma = torch.sqrt(g)
 
@@ -64,8 +58,8 @@ class GDN(nn.Module):
         unfold = False
         if inputs.dim() == 5:
             unfold = True
-            bs, ch, d, w, h = inputs.size() 
-            inputs = inputs.view(bs, ch, d*w, h)
+            bs, ch, d, w, h = inputs.size()
+            inputs = inputs.view(bs, ch, d * w, h)
 
         _, ch, _, _ = inputs.size()
 

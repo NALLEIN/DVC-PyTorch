@@ -11,9 +11,9 @@ def _fspecial_gauss_1d(size, sigma):
         torch.Tensor: 1D kernel
     """
     coords = torch.arange(size).to(dtype=torch.float)
-    coords -= size//2
+    coords -= size // 2
 
-    g = torch.exp(-(coords**2) / (2*sigma**2))
+    g = torch.exp(-(coords**2) / (2 * sigma**2))
     g /= g.sum()
     return g.unsqueeze(0).unsqueeze(0)
 
@@ -63,9 +63,9 @@ def _ssim(X, Y, win, data_range=255, size_average=True, full=False):
     mu2_sq = mu2.pow(2)
     mu1_mu2 = mu1 * mu2
 
-    sigma1_sq = compensation * ( gaussian_filter(X * X, win) - mu1_sq )
-    sigma2_sq = compensation * ( gaussian_filter(Y * Y, win) - mu2_sq )
-    sigma12   = compensation * ( gaussian_filter(X * Y, win) - mu1_mu2 )
+    sigma1_sq = compensation * (gaussian_filter(X * X, win) - mu1_sq)
+    sigma2_sq = compensation * (gaussian_filter(Y * Y, win) - mu2_sq)
+    sigma12 = compensation * (gaussian_filter(X * Y, win) - mu1_mu2)
 
     cs_map = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)
     ssim_map = ((2 * mu1_mu2 + C1) / (mu1_sq + mu2_sq + C1)) * cs_map
@@ -117,11 +117,7 @@ def ssim(X, Y, win_size=11, win_sigma=1.5, win=None, data_range=255, size_averag
     else:
         win_size = win.shape[-1]
 
-    ssim_val, cs = _ssim(X, Y,
-                         win=win,
-                         data_range=data_range,
-                         size_average=False,
-                         full=True)
+    ssim_val, cs = _ssim(X, Y, win=win, data_range=data_range, size_average=False, full=True)
     if size_average:
         ssim_val = ssim_val.mean()
         cs = cs.mean()
@@ -160,8 +156,7 @@ def ms_ssim(X, Y, win_size=11, win_sigma=1.5, win=None, data_range=255, size_ave
         raise ValueError('Window size must be odd.')
 
     if weights is None:
-        weights = torch.FloatTensor(
-            [0.0448, 0.2856, 0.3001, 0.2363, 0.1333]).to(X.device, dtype=X.dtype)
+        weights = torch.FloatTensor([0.0448, 0.2856, 0.3001, 0.2363, 0.1333]).to(X.device, dtype=X.dtype)
 
     win_sigma = win_sigma
     if win is None:
@@ -173,11 +168,7 @@ def ms_ssim(X, Y, win_size=11, win_sigma=1.5, win=None, data_range=255, size_ave
     levels = weights.shape[0]
     mcs = []
     for _ in range(levels):
-        ssim_val, cs = _ssim(X, Y,
-                             win=win,
-                             data_range=data_range,
-                             size_average=False,
-                             full=True)
+        ssim_val, cs = _ssim(X, Y, win=win, data_range=data_range, size_average=False, full=True)
         mcs.append(cs)
 
         padding = (X.shape[2] % 2, X.shape[3] % 2)
@@ -186,8 +177,7 @@ def ms_ssim(X, Y, win_size=11, win_sigma=1.5, win=None, data_range=255, size_ave
 
     mcs = torch.stack(mcs, dim=0)  # mcs, (level, batch)
     # weights, (level)
-    msssim_val = torch.prod((mcs[:-1] ** weights[:-1].unsqueeze(1))
-                            * (ssim_val ** weights[-1]), dim=0)  # (batch, )
+    msssim_val = torch.prod((mcs[:-1]**weights[:-1].unsqueeze(1)) * (ssim_val**weights[-1]), dim=0)  # (batch, )
 
     if size_average:
         msssim_val = msssim_val.mean()
@@ -207,8 +197,7 @@ class SSIM(torch.nn.Module):
         """
 
         super(SSIM, self).__init__()
-        self.win = _fspecial_gauss_1d(
-            win_size, win_sigma).repeat(channel, 1, 1, 1)
+        self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat(channel, 1, 1, 1)
         self.size_average = size_average
         self.data_range = data_range
 
@@ -229,8 +218,7 @@ class MS_SSIM(torch.nn.Module):
         """
 
         super(MS_SSIM, self).__init__()
-        self.win = _fspecial_gauss_1d(
-            win_size, win_sigma).repeat(channel, 1, 1, 1)
+        self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat(channel, 1, 1, 1)
         self.size_average = size_average
         self.data_range = data_range
         self.weights = weights

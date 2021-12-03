@@ -3,6 +3,7 @@ from .basics import *
 # import os
 # import codecs
 
+
 class Bitparm(nn.Module):
     '''
     save params
@@ -24,6 +25,7 @@ class Bitparm(nn.Module):
             x = x * F.softplus(self.h) + self.b
             return x + F.tanh(x) * F.tanh(self.a)
 
+
 class BitEstimator(nn.Module):
     '''
     Estimate bit
@@ -34,7 +36,7 @@ class BitEstimator(nn.Module):
         self.f2 = Bitparm(channel)
         self.f3 = Bitparm(channel)
         self.f4 = Bitparm(channel, True)
-        
+
     def forward(self, x):
         x = self.f1(x)
         x = self.f2(x)

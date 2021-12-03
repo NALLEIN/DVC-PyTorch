@@ -39,12 +39,13 @@ import numpy
 #     g = A*numpy.exp(-((x**2/(2.0*sigma**2))+(y**2/(2.0*sigma**2))))
 #     return g
 
+
 def fspecial_gauss(size, sigma):
     """Function to mimic the 'fspecial' gaussian MATLAB function
     """
-    x, y = numpy.mgrid[-size//2 + 1:size//2 + 1, -size//2 + 1:size//2 + 1]
-    g = numpy.exp(-((x**2 + y**2)/(2.0*sigma**2)))
-    return g/g.sum()
+    x, y = numpy.mgrid[-size // 2 + 1:size // 2 + 1, -size // 2 + 1:size // 2 + 1]
+    g = numpy.exp(-((x**2 + y**2) / (2.0 * sigma**2)))
+    return g / g.sum()
 
 
 def ssim(img1, img2, cs_map=False):
@@ -108,7 +109,7 @@ def msssim(img1, img2):
 
 
 def psnr(ref, target):
-    diff = ref/255.0 - target/255.0
+    diff = ref / 255.0 - target / 255.0
     diff = diff.flatten('C')
     rmse = math.sqrt(numpy.mean(diff**2.))
     return 20 * math.log10(1.0 / (rmse))
@@ -141,7 +142,7 @@ def main():
             size = int(l.split(',')[4])
             size_line.append(size)
 
-    size_line = numpy.array(size_line)/(im_width*im_height)
+    size_line = numpy.array(size_line) / (im_width * im_height)
     # print(size_line)
 
     # bpp_str = ''
@@ -155,11 +156,11 @@ def main():
 
     import time
     for i in range(len(size_line)):
-#
+        #
         if (i) % 10 == 0:
-        #if True:
-            source = prefix + 'source/img' + "{0:0=6d}".format(i+1) + '.png'
-            h265 = prefix + 'h265/img' + "{0:0=6d}".format(i+1) + '.png'
+            #if True:
+            source = prefix + 'source/img' + "{0:0=6d}".format(i + 1) + '.png'
+            h265 = prefix + 'h265/img' + "{0:0=6d}".format(i + 1) + '.png'
 
             source_img = io.imread(source)
             h265_img = io.imread(h265)
@@ -172,7 +173,7 @@ def main():
             tmpssim = msssim(h265_img[:, :, 0], source_img[:, :, 0])
             tmpssim += msssim(h265_img[:, :, 1], source_img[:, :, 1])
             tmpssim += msssim(h265_img[:, :, 2], source_img[:, :, 2])
-            ms_ssim_val = tmpssim/3.0
+            ms_ssim_val = tmpssim / 3.0
 
             psnr_arr.append(psnr_val)
             msssim_arr.append(ms_ssim_val)
@@ -183,11 +184,11 @@ def main():
             # print(size_line[i])
 
     #print(23)
-    print('crf:' +sys.argv[1])
+    print('crf:' + sys.argv[1])
 
-    print('psnr:' +  str(numpy.array(psnr_arr).mean(0)))
-    print('bpp:' +str(numpy.array(bpp_arr).mean(0)))
-    print('msssim:' +str(numpy.array(msssim_arr).mean(0)))
+    print('psnr:' + str(numpy.array(psnr_arr).mean(0)))
+    print('bpp:' + str(numpy.array(bpp_arr).mean(0)))
+    print('msssim:' + str(numpy.array(msssim_arr).mean(0)))
 
     # plt.plot(bpp, msssim_arr)
     # plt.ylabel('MS-SSIM')

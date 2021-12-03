@@ -16,6 +16,7 @@ from subnet.basics import *
 from subnet.ms_ssim_torch import ms_ssim
 from augmentation import random_flip, random_crop_and_pad_image_and_labels
 
+
 class DataSet(data.Dataset):
     def __init__(self, path="./data/vimeo_septuplet/test.txt", im_height=256, im_width=256):
         self.image_input_list, self.image_ref_list = self.get_vimeo(filefolderlist=path)
@@ -27,7 +28,7 @@ class DataSet(data.Dataset):
     def get_vimeo(self, rootdir="./vimeo_septuplet/sequences/", filefolderlist="./data/vimeo_septuplet/test.txt"):
         with open(filefolderlist) as f:
             data = f.readlines()
-            
+
         fns_train_input = []
         fns_train_ref = []
 
@@ -52,7 +53,7 @@ class DataSet(data.Dataset):
 
         input_image = input_image.transpose(2, 0, 1)
         ref_image = ref_image.transpose(2, 0, 1)
-        
+
         input_image = torch.from_numpy(input_image).float()
         ref_image = torch.from_numpy(ref_image).float()
 
@@ -60,6 +61,7 @@ class DataSet(data.Dataset):
         input_image, ref_image = random_flip(input_image, ref_image)
 
         return input_image, ref_image
+
 
 class HEVCDataSet(data.Dataset):
     def __init__(self, root="./data/hevctest/images", refdir='./data/hevctest/videos_crop/', crf='H265QP27', testfull=False):
@@ -96,13 +98,14 @@ class HEVCDataSet(data.Dataset):
         if crf == 'H265QP22':
             print('use H265QP22')
             Ibpp = []  # you need to fill bpps after generating QP=22
-        elif crf  == 'H265QP27':
+        elif crf == 'H265QP27':
             print('use H265QP27')
-            Ibpp = [1.2450358072916667, 0.43555094401041666, 0.9358439127604167, 0.34054361979166664, 0.8700154622395834]  # you need to fill bpps after generating QP=27
-        elif crf  == 'H265QP32':
+            Ibpp = [1.2450358072916667, 0.43555094401041666, 0.9358439127604167, 0.34054361979166664,
+                    0.8700154622395834]  # you need to fill bpps after generating QP=27
+        elif crf == 'H265QP32':
             print('use H265QP32')
             Ibpp = []  # you need to fill bpps after generating QP=32
-        elif crf  == 'H265QP37':
+        elif crf == 'H265QP37':
             print('use H265L29')
             Ibpp = []  # you need to fill bpps after generating QP=37
         else:
@@ -129,7 +132,8 @@ class HEVCDataSet(data.Dataset):
             if refpsnr is None:
                 refpsnr = CalcuPSNR(input_image, ref_image)
                 refmsssim = ms_ssim(torch.from_numpy(input_image[np.newaxis, :]),
-                                    torch.from_numpy(ref_image[np.newaxis, :]), data_range=1.0).numpy()
+                                    torch.from_numpy(ref_image[np.newaxis, :]),
+                                    data_range=1.0).numpy()
             else:
                 input_images.append(input_image[:, :h, :w])
 

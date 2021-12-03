@@ -26,7 +26,8 @@ class Analysis_net(nn.Module):
         torch.nn.init.constant_(self.conv3.bias.data, 0.01)
         self.gdn3 = GDN(out_channel_N)
         self.conv4 = nn.Conv2d(out_channel_N, out_channel_M, 5, stride=2, padding=2)
-        torch.nn.init.xavier_normal_(self.conv4.weight.data, (math.sqrt(2 * (out_channel_M + out_channel_N) / (out_channel_N + out_channel_N))))
+        torch.nn.init.xavier_normal_(self.conv4.weight.data,
+                                     (math.sqrt(2 * (out_channel_M + out_channel_N) / (out_channel_N + out_channel_N))))
         torch.nn.init.constant_(self.conv4.bias.data, 0.01)
         # self.resEncoder = nn.Sequential(
         #     nn.Conv2d(3, out_channel_N, 5, stride=2, padding=2),# how to initialize ???
@@ -46,19 +47,19 @@ class Analysis_net(nn.Module):
 
 
 def build_model():
-        input_image = Variable(torch.zeros([4, 3, 256, 256]))
+    input_image = Variable(torch.zeros([4, 3, 256, 256]))
 
-        analysis_net = Analysis_net()
-        feature = analysis_net(input_image)
+    analysis_net = Analysis_net()
+    feature = analysis_net(input_image)
 
-        print(feature.size())
-        # feature = sess.run(weights)
+    print(feature.size())
+    # feature = sess.run(weights)
 
-        # print(weights_val)
+    # print(weights_val)
 
-        # gamma_val = sess.run(gamma)
+    # gamma_val = sess.run(gamma)
 
-        # print(gamma_val)
+    # print(gamma_val)
 
 
 if __name__ == '__main__':

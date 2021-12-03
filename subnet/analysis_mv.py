@@ -53,6 +53,7 @@ class Analysis_mv_net(nn.Module):
         x = self.relu7(self.conv7(x))
         return self.conv8(x)
 
+
 class Extractor_net(nn.Module):
     def __init__(self):
         super(Extractor_net, self).__init__()
@@ -78,6 +79,7 @@ class Extractor_net(nn.Module):
         x = self.prelu3(self.conv3(x))
         return self.conv4(x)
 
+
 class Attention_net(nn.Module):
     def __init__(self):
         super(Attention_net, self).__init__()
@@ -96,10 +98,11 @@ class Attention_net(nn.Module):
         x = self.conv2(x)
         return self.sigmoid(x)
 
+
 class Generator_net(nn.Module):
     def __init__(self):
         super(Generator_net, self).__init__()
-        self.deconv1 = nn.ConvTranspose2d(out_channel_N, out_channel_mv, 5,stride=2, padding=2, output_padding=1)
+        self.deconv1 = nn.ConvTranspose2d(out_channel_N, out_channel_mv, 5, stride=2, padding=2, output_padding=1)
         torch.nn.init.xavier_normal_(self.deconv1.weight.data, math.sqrt(2))
         torch.nn.init.constant_(self.deconv1.bias.data, 0.01)
         self.prelu1 = nn.LeakyReLU(inplace=True)
@@ -112,9 +115,9 @@ class Generator_net(nn.Module):
         #torch.nn.init.constant_(self.deconv3.bias.data, 0.01)
         #self.prelu3 = nn.LeakyReLU(inplace=True)
         self.deconv3 = nn.ConvTranspose2d(out_channel_mv, out_channel_mv, 3, stride=1, padding=1)
-        torch.nn.init.xavier_normal_(self.deconv3.weight.data, (math.sqrt(2 * 1 * (out_channel_mv + 2) / (out_channel_mv + out_channel_mv))))
+        torch.nn.init.xavier_normal_(self.deconv3.weight.data,
+                                     (math.sqrt(2 * 1 * (out_channel_mv + 2) / (out_channel_mv + out_channel_mv))))
         torch.nn.init.constant_(self.deconv3.bias.data, 0.01)
-
 
     def forward(self, x):
         x = self.prelu1(self.deconv1(x))
@@ -122,14 +125,16 @@ class Generator_net(nn.Module):
         #x = self.prelu3(self.deconv3(x))
         return self.deconv3(x)
 
+
 def build_model():
     analysis_net = Analysis_net()
     analysis_mv_net = Analysis_mv_net()
-    
+
     feature = torch.zeros([3, 2, 256, 256])
     z = analysis_mv_net(feature)
     print("feature : ", feature.size())
     print("z : ", z.size())
+
 
 if __name__ == '__main__':
     build_model()

@@ -21,11 +21,13 @@ from compressai.entropy_models import EntropyBottleneck, GaussianConditional
 from compressai.models.utils import update_registered_buffers
 from compressai.ans import BufferedRansEncoder, RansDecoder
 
+
 def save_model(model, iter, config):
     if not os.path.isdir("./snap/{}".format(config)):
         os.mkdir("./snap/{}".format(config))
 
     torch.save(model.state_dict(), "./snap/{}/iter{}.model".format(config, iter))
+
 
 def load_model(model, f):
     with open(f, 'rb') as f:
@@ -42,6 +44,7 @@ def load_model(model, f):
     else:
         return 0
 
+
 class VideoCompressor(CompressionModel):
     def __init__(self, **kwargs):
         super().__init__(entropy_bottleneck_channels=out_channel_N, **kwargs)
@@ -57,7 +60,7 @@ class VideoCompressor(CompressionModel):
         self.respriorEncoder = Analysis_prior_net()
         self.respriorDecoder = Synthesis_prior_net()
         self.warp_weight = 0
-        
+
         self.entropy_hyper_mv = self.entropy_bottleneck
         self.entropy_hyper_res = EntropyBottleneck(out_channel_N)
         self.entropy_bottleneck_mv = GaussianConditional(None)
@@ -77,13 +80,12 @@ class VideoCompressor(CompressionModel):
         quant_mvprior, mvprior_likelihoods = self.entropy_hyper_mv(mv_prior)
         recon_mv_sigma = self.mvpriorDecoder(quant_mvprior)
 
-        quant_mv = self.entropy_bottleneck_mv.quantize(
-                mv_fea, "noise" if self.training else "dequantize")
+        quant_mv = self.entropy_bottleneck_mv.quantize(mv_fea, "noise" if self.training else "dequantize")
         _, mv_likelihoods = self.entropy_bottleneck_mv(mv_fea, recon_mv_sigma)
         recon_mv = self.mvDecoder(quant_mv)
 
         prediction, warpframe = self.motioncompensation(referframe, recon_mv)
-        
+
         res = input_image - prediction
         res_fea = self.resEncoder(res)
 
@@ -93,8 +95,7 @@ class VideoCompressor(CompressionModel):
         quant_resprior, resprior_likelihoods = self.entropy_hyper_res(res_prior)
         recon_res_sigma = self.respriorDecoder(quant_resprior)
 
-        quant_res = self.entropy_bottleneck_res.quantize(
-            res_fea, "noise" if self.training else "dequantize")
+        quant_res = self.entropy_bottleneck_res.quantize(res_fea, "noise" if self.training else "dequantize")
         _, res_likelihoods = self.entropy_bottleneck_res(res_fea, recon_res_sigma)
 
         recon_res = self.resDecoder(quant_res)
@@ -116,24 +117,24 @@ class VideoCompressor(CompressionModel):
         bpp = bpp_mv + bpp_mvprior + bpp_res + bpp_resprior
 
         return clipped_recon_image, mse_loss, warploss, interloss, bpp_res, bpp_resprior, bpp_mv, bpp
-     
+
     def load_state_dict(self, state_dict):
         update_registered_buffers(
             self.entropy_hyper_res,
             "entropy_hyper_res",
-            ["_quantized_cdf","_offset","_cdf_length"],
+            ["_quantized_cdf", "_offset", "_cdf_length"],
             state_dict,
         )
         update_registered_buffers(
             self.entropy_bottleneck_mv,
             "entropy_bottleneck_mv",
-            ["_quantized_cdf","_offset","_cdf_length", "scale_table"],
+            ["_quantized_cdf", "_offset", "_cdf_length", "scale_table"],
             state_dict,
         )
         update_registered_buffers(
             self.entropy_bottleneck_res,
             "entropy_bottleneck_res",
-            ["_quantized_cdf","_offset","_cdf_length","scale_table"],
+            ["_quantized_cdf", "_offset", "_cdf_length", "scale_table"],
             state_dict,
         )
         print('finish loading entropy botteleneck buffer')
@@ -156,7 +157,7 @@ class VideoCompressor(CompressionModel):
         updated |= super().update(force=force)
         return updated
 
-    def compress(self, input_image, referframe):     
+    def compress(self, input_image, referframe):
         estmv = self.opticFlow(input_image, referframe)
         mv_fea = self.mvEncoder(estmv)
 
@@ -178,12 +179,15 @@ class VideoCompressor(CompressionModel):
         res_prior = self.respriorEncoder(res_fea)
         resprior_strings = self.entropy_hyper_res.compress(res_prior)
         quant_resprior = self.entropy_hyper_res.decompress(resprior_strings, res_prior.size()[-2:])
-        
+
         recon_res_sigma = self.respriorDecoder(quant_resprior)
         res_indexes = self.entropy_bottleneck_res.build_indexes(recon_res_sigma)
         res_strings = self.entropy_bottleneck_res.compress(res_fea, res_indexes)
 
-        return {"strings": [mv_strings, mvprior_strings, res_strings, resprior_strings], "shape": [mv_prior.size()[-2:], res_prior.size()[-2:]]}
+        return {
+            "strings": [mv_strings, mvprior_strings, res_strings, resprior_strings],
+            "shape": [mv_prior.size()[-2:], res_prior.size()[-2:]]
+        }
 
     def decompress(self, referframe, strings, shape):
         mvprior_hat = self.entropy_hyper_mv.decompress(strings[1], shape[0])
@@ -192,13 +196,13 @@ class VideoCompressor(CompressionModel):
         mv_hat = self.entropy_bottleneck_mv.decompress(strings[0], mv_indexes)
         recon_mv = self.mvDecoder(mv_hat)
         prediction, _ = self.motioncompensation(referframe, recon_mv)
-        
+
         resprior_hat = self.entropy_hyper_res.decompress(strings[3], shape[1])
         recon_res_sigma = self.respriorDecoder(resprior_hat)
         res_indexes = self.entropy_bottleneck_res.build_indexes(recon_res_sigma)
         res_hat = self.entropy_bottleneck_res.decompress(strings[2], res_indexes)
         recon_res = self.resDecoder(res_hat)
-        
+
         recon_frame = prediction + recon_res
         recon_frame = recon_frame.clamp(0., 1.)
         return {"x_hat": recon_frame}
